@@ -1,0 +1,43 @@
+name: MirrorBotSetup
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      GIT_NAME:
+        description: 'သင့်github username (e.g.,https://github.com/test/FGMbot တွင် test သည် username)⬇ '
+        required: true
+      GIT_EMAIL:
+        description: 'သင့် github acc sign inလုပ်တဲ့ email⬇'
+        required: true
+      GIT_TOKEN:
+        description: 'https://github.com/settings/tokens မှ ရတဲ့ token⬇'
+        required: true
+      BOT_REPO:
+        description: 'https://ဖြုတ်ထားတဲ့ bot repo (e.g.,https://github.com/test/FGMbot တွင် github.com/test/FGMbot ဒါဖြည့်)⬇ '
+        required: true
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+       - name: "Checkout FGN-Mirror"
+         uses: actions/checkout@main
+       - name: "Initialize FGN-Mirror"
+         continue-on-error: true
+         run: |
+           git config --global user.name ${{ github.event.inputs.GIT_NAME }}
+           git config --global user.email ${{ github.event.inputs.GIT_EMAIL }}
+           git config --global credential.helper store
+           echo "https://${{ github.event.inputs.GIT_NAME }}:${{ github.event.inputs.GIT_TOKEN }}@github.com" > ~/.git-credentials
+       - name: "Clone Repository"
+         continue-on-error: true
+         run: |
+           git clone https://${{ github.event.inputs.GIT_NAME }}:${{ github.event.inputs.GIT_TOKEN }}@${{ github.event.inputs.BOT_REPO }} fgn-mirror
+       - name: "Running FGN-Mirror Server"
+         timeout-minutes: 350
+         continue-on-error: true
+         run: |
+           cd fgn-mirror
+           docker build . -t fgn-mirror
+           docker run fgn-mirror
